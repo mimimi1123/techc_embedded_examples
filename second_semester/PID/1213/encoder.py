@@ -60,10 +60,11 @@ if __name__ == "__main__":
         last_count = 0
         while True:
             current_count = enc.get_count()
-            if current_count != last_count:
-                print(f"Count: {current_count}")
-                last_count = current_count
-            time.sleep(0.01)
+            # if current_count != last_count:
+            #     print(f"Count: {current_count}")
+            #     last_count = current_count
+            print(f"Count: {current_count}")
+            time.sleep(0.1)
 
     except KeyboardInterrupt:
         print("\nテスト終了")
