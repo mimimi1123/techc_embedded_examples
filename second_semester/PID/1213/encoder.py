@@ -7,6 +7,7 @@ class Encoder:
         self.pin_b = pin_b
         self.count = 0
         self.last_state = 0
+        self.direction = 0
         
         # GPIO.setmodeは呼び出し元で行う前提だが、
         # クラス内で安全のためsetup前に現在のモードを確認することも可能。
@@ -15,28 +16,37 @@ class Encoder:
         GPIO.setup(self.pin_b, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         
         # 初期状態を2bitで保持 (A:bit1, B:bit0)
-        self.last_state = (GPIO.input(self.pin_a) << 1) | GPIO.input(self.pin_b)
+        #self.last_state = (GPIO.input(self.pin_a) << 1) | GPIO.input(self.pin_b)
         
         # 双方の立ち上がり/立ち下がりを割り込みで監視
-        GPIO.add_event_detect(self.pin_a, GPIO.BOTH, callback=self.update_count, bouncetime=1)
-        GPIO.add_event_detect(self.pin_b, GPIO.BOTH, callback=self.update_count, bouncetime=1)
+        #GPIO.add_event_detect(self.pin_a, GPIO.BOTH, callback=self.update_count, bouncetime=1)
+        #GPIO.add_event_detect(self.pin_b, GPIO.BOTH, callback=self.update_count, bouncetime=1)
+        
+        GPIO.add_event_detect(self.pin_a,GPIO.RISING,callback = self.counter,bouncetime = 1)
+    # def update_count(self, channel):
+    #     state_a = GPIO.input(self.pin_a)
+    #     state_b = GPIO.input(self.pin_b)
+    #     state = (state_a << 1) | state_b
 
-    def update_count(self, channel):
-        state_a = GPIO.input(self.pin_a)
+    #     # グレイコードの遷移表 (前状態->現状態で+1/-1/0を与える)
+    #     transition = {
+    #         0b00: {0b01: 1, 0b10: -1},
+    #         0b01: {0b11: 1, 0b00: -1},
+    #         0b11: {0b10: 1, 0b01: -1},
+    #         0b10: {0b00: 1, 0b11: -1},
+    #     }
+
+    #     delta = transition.get(self.last_state, {}).get(state, 0)
+    #     self.count += delta
+    #     self.last_state = state
+        
+    def counter(self,channel):
         state_b = GPIO.input(self.pin_b)
-        state = (state_a << 1) | state_b
-
-        # グレイコードの遷移表 (前状態->現状態で+1/-1/0を与える)
-        transition = {
-            0b00: {0b01: 1, 0b10: -1},
-            0b01: {0b11: 1, 0b00: -1},
-            0b11: {0b10: 1, 0b01: -1},
-            0b10: {0b00: 1, 0b11: -1},
-        }
-
-        delta = transition.get(self.last_state, {}).get(state, 0)
-        self.count += delta
-        self.last_state = state
+        if (state_b == 1):
+            direction = 1
+        else:
+            direction = -1
+        self.count += direction
 
     def get_count(self):
         return self.count
@@ -49,6 +59,10 @@ if __name__ == "__main__":
     # ピン設定 (環境に合わせて変更してください)
     PIN_A = 17
     PIN_B = 27
+    gear_ratio = 23/10 * 22/10 * 22/10 * 20/12 * 20/12 * 22/12 * 22/12 
+    
+    
+    print(f"gear ratio {gear_ratio}")
 
     GPIO.setmode(GPIO.BCM)
     
@@ -63,7 +77,7 @@ if __name__ == "__main__":
             # if current_count != last_count:
             #     print(f"Count: {current_count}")
             #     last_count = current_count
-            print(f"Count: {current_count}")
+            print(f"Count: {current_count} Angle: {current_count / gear_ratio / 11 *360}")
             time.sleep(0.1)
 
     except KeyboardInterrupt:
